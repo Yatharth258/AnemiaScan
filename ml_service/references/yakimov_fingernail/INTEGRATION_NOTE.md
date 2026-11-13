@@ -1,0 +1,1 @@
+These are the supplied Yakimov fingernail training and inference reference files. The application runtime uses `../../worker.py` to load the same five fold checkpoints once and perform inference from the Node/Express request stream. Checkpoints are stored centrally at `../../models/fingernail/checkpoints/` to avoid duplicating the large weight files.

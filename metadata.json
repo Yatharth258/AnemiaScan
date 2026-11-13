@@ -1,0 +1,10 @@
+{
+  "name": "AnemiaScan",
+  "description": "Multi-Modal Non-Invasive Anemia Screening Aid using smartphone tissue imaging (fingernail, conjunctiva, palm) with deep learning readiness.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
