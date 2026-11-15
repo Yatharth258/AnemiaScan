@@ -5,6 +5,7 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import readline from 'readline';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
+import { Client, handle_file } from '@gradio/client';
 import { INITIAL_USER_PROFILES, INITIAL_DEMO_SCREENINGS } from './src/data/demoData';
 import { RESEARCH_BASELINES, RESEARCH_METHODOLOGY } from './src/data/researchBaselines';
 import { ScreeningRecord, UserProfile, ModalityType, AnemiaRisk } from './src/types';
@@ -31,6 +32,15 @@ let modelWorker: ChildProcessWithoutNullStreams | null = null;
 let modelWorkerReady: Promise<void> | null = null;
 let modelWorkerLoaded = false;
 const pendingModelRequests = new Map<string, { resolve: (value: any) => void; reject: (error: Error) => void }>();
+const hfSpaceId = process.env.HF_SPACE_ID || 'jbvcskdbsdjsd/anemiascan-inference';
+let hfClientReady: Promise<any> | null = null;
+
+function getHuggingFaceClient() {
+  if (!hfClientReady) {
+    hfClientReady = Client.connect(hfSpaceId, process.env.HF_TOKEN ? { token: process.env.HF_TOKEN } : undefined);
+  }
+  return hfClientReady;
+}
 
 function startModelWorker(): Promise<void> {
   if (modelWorkerReady) return modelWorkerReady;
@@ -115,7 +125,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'AnemiaScan Node/Express Backend',
-    modelIntegrationStatus: modelWorkerLoaded ? 'ready' : modelWorker ? 'loading' : 'unavailable',
+    modelIntegrationStatus: hfSpaceId ? 'huggingface-configured' : modelWorkerLoaded ? 'ready' : modelWorker ? 'loading' : 'unavailable',
     models: ['SEWA Eye ResNet18 multitask', 'Ghana Palm MobileNetV2', 'Yakimov Fingernail 5-fold ResNet18'],
     version: '3.0.0'
   });
@@ -227,7 +237,7 @@ app.post('/api/screenings/analyze', async (req, res) => {
   } catch (error) {
     console.error('[AnemiaScan] Model inference failed:', error);
     return res.status(503).json({
-      error: 'Trained model inference is unavailable. Check Python, PyTorch dependencies, and checkpoint files.',
+      error: 'Trained model inference is unavailable. Check the Hugging Face Space connection and API configuration.',
       details: error instanceof Error ? error.message : String(error)
     });
   }
@@ -337,7 +347,7 @@ app.get('/api/research/baselines', (_req, res) => {
 // VITE OR STATIC FILE SERVING
 // -------------------------------------------------------------
 async function setupServer() {
-  startModelWorker().catch((err) => console.error('[AnemiaScan ML] Model worker could not start:', err));
+  if (!hfSpaceId) {\n    startModelWorker().catch((err) => console.error('[AnemiaScan ML] Model worker could not start:', err));\n  } else {\n    console.log(`[AnemiaScan ML] Using Hugging Face Space: ${hfSpaceId}`);\n  }
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
