@@ -37,7 +37,12 @@ let hfClientReady: Promise<any> | null = null;
 
 function getHuggingFaceClient() {
   if (!hfClientReady) {
-    hfClientReady = Client.connect(hfSpaceId, process.env.HF_TOKEN ? { token: process.env.HF_TOKEN } : undefined);
+    const hasToken = Boolean(process.env.HF_TOKEN?.trim());
+    console.log(`[AnemiaScan ML] HF_TOKEN configured: ${hasToken}`);
+    hfClientReady = Client.connect(
+      hfSpaceId,
+      hasToken ? { token: process.env.HF_TOKEN!.trim() } : undefined
+    );
   }
   return hfClientReady;
 }
