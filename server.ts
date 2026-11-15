@@ -102,6 +102,21 @@ function startModelWorker(): Promise<void> {
 }
 
 async function runModelInference(modality: ModalityType, imageData: string): Promise<any> {
+  if (hfSpaceId) {
+    const client = await getHuggingFaceClient();
+    const [header, encoded] = imageData.includes(',') ? imageData.split(',', 2) : ['', imageData];
+    const mimeType = header.match(/^data:([^;]+)/)?.[1] || 'image/png';
+    const imageBuffer = Buffer.from(encoded, 'base64');
+    const imageFile = new File([imageBuffer], 'screening-image', { type: mimeType });
+    const result = await client.predict(process.env.HF_API_NAME || '/predict_image', [
+      modality,
+      handle_file(imageFile)
+    ]);
+    const prediction = result?.data?.[0];
+    if (prediction == null) throw new Error('Hugging Face Space returned an empty prediction');
+    return typeof prediction === 'string' ? JSON.parse(prediction) : prediction;
+  }
+
   await startModelWorker();
   if (!modelWorker || !modelWorker.stdin.writable) throw new Error('Model worker is not available');
   const id = randomUUID();
