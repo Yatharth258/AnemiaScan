@@ -347,7 +347,7 @@ app.get('/api/research/baselines', (_req, res) => {
 // VITE OR STATIC FILE SERVING
 // -------------------------------------------------------------
 async function setupServer() {
-  if (!hfSpaceId) {\n    startModelWorker().catch((err) => console.error('[AnemiaScan ML] Model worker could not start:', err));\n  } else {\n    console.log(`[AnemiaScan ML] Using Hugging Face Space: ${hfSpaceId}`);\n  }
+  console.log(`[AnemiaScan ML] Using Hugging Face Space: ${hfSpaceId}`);
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
